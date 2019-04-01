@@ -1,0 +1,516 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[spanish,es-tabla]{babel}
+
+\usepackage[utf8]{inputenc} % Escribir con acentos, ~n...
+\usepackage{eurosym} % s´ımbolo del euro
+\newcommand{\horrule}[1]{\rule{\linewidth}{#1}} % Create horizontal rule command with 1 argument of height
+\usepackage{listings}             % Incluye el paquete listing
+\usepackage[cache=false]{minted}
+\usepackage{graphics,graphicx, float} %para incluir imágenes y colocarlas
+\usepackage{hyperref}
+\hypersetup{
+	colorlinks,
+	citecolor=black,
+	filecolor=black,
+	linkcolor=black,
+	urlcolor=black
+}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{diagbox}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+
+\title{
+\normalfont \normalsize 
+\textsc{{\bf Metaheurísticas (2018-2019)} \\ Grado en Ingeniería Informática \\ Universidad de Granada} \\ [20pt] % Your university, school and/or department name(s)
+\horrule{0.5pt} \\[0.4cm] % Thin top horizontal rule
+{\huge Práctica 1.b:}\\
+Técnicas de Búsqueda Local y Algoritmos Greedy
+para el Problema del Aprendizaje de Pesos en
+Características \\ % The assignment title
+\horrule{2pt} \\[0.5cm] % Thick bottom horizontal rule
+\includegraphics{images/logo.png}	
+}
+
+\author{Antonio Jesús Heredia Castillo\\DNI:xxxxxxxxx\\a.heredia.castillo@gmail.com\\Grupo MH3: Jueves de 17:30h a 19:30h} % Nombre y apellidos
+
+\date{\normalsize\today} % Incluye la fecha actual
+
+%----------------------------------------------------------------------------------------
+% DOCUMENTO
+%----------------------------------------------------------------------------------------
+
+\begin{document}
+
+\maketitle % Muestra el Título
+\newpage %inserta un salto de página
+\tableofcontents % para generar el índice de contenidos
+\listoftables
+\newpage
+
+\section{Descripción del problema}
+En este problema nos encontramos con un conjunto de datos que previamente han sido clasificados. Estos datos tienen asociado un serie de características, cada una con un valor en concreto. Con estos datos y haciendo uso de diferentes algoritmos y caricaturistas queremos crear un modelo que nos permita clasificar de forma automática cualquier valor nuevo que tengamos. En este caso vamos a comprar el resultado de tres diferentes técnicas.\\\\
+La primera técnica que usamos es usar un clasificador K-NN,  utilizando la técnica de buscar el vecino mas cercano. Este método busca simplemente el elemento que esta mas cercano a el y lo clasifica con la misma etiqueta que el.\\\\
+La siguiente técnica que vamos a usar es el clasificador RELIEF este algoritmo usando  amigos mas cercanos y enemigos mas cercano obtiene un vector de pesos que se puede usar para un clasificador 1-NN para modificar la importancia a la hora de obtener la distancia del vecino mas cercano.\\\\
+La ultima técnica utilizada es una BL, que modifica los valores del vector de pesos usando el operador de vecino por mutación normal, que consiste en coger un atributo y modificarlo por un valor de la normal.\\\\
+
+Todos estas técnicas estarán descritas mas adelante.
+\section{Descripción de los algoritmos comunes}
+Para cargar los datos simplemente utilizo \textbf{scipy} \cite{spiz}, que tiene una función para cargar directamente los ficheros arff. Como lo carga en formato Pandas, los normalizo con \textbf{preprocessing}   de \textbf{sklearn} \cite{Baz}
+ y los paso a array de Numpy. \\\\
+Para los grupos de datos, he usado un $datos[F,C]$ donde F es la cantidad de datos y C la cantidad de atributos que tiene esa clase de datos:
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|c|c|c|c|c|}
+		\hline 
+			\backslashbox{Datos}{Atributos}& atributo0 & atributo1 & ... & atributoC \\ 
+		\hline 
+		dato0 &  &  &  &  \\ 
+		\hline 
+		dato1 &  &  &  &  \\ 
+		\hline 
+		... &  &  &  &  \\ 
+		\hline 
+		datoF &  &  &  &  \\ 
+		\hline 
+	\end{tabular} 
+\end{table}
+\subsection{Representación de los datos}
+La representación para para las etiquetas es igual de sencilla en este caso se representa de la siguiente forma, $vector[F]$,  un vector de tamaño F donde cada etiqueta de una posición corresponde al  dato que se encuentra en la misma posición en el array de datos:
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|c|c|}
+		\hline 
+		dato&  etiqueta \\
+		\hline 
+		dato0 & a   \\ 
+		\hline 
+		dato1 & b  \\ 
+		\hline 
+		... &    \\ 
+		\hline 
+		datoC & a  \\ 
+		\hline 
+	\end{tabular} 
+\end{table}
+Para representar los pesos que obtenemos tanto en RELIEF como en Local Search, usaremos tambien un vector, en este caso sera $pesos[C]$, donde $C$ sera el numero de atributos que tienen nuestros datos:
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|c|c|}
+		\hline 
+		peso&  valor \\
+		\hline 
+		peso0 & 0.22335   \\ 
+		\hline 
+		peso1 & 0.78335  \\ 
+		\hline 
+		... &    \\ 
+		\hline 
+		pesoF & 0.5436  \\ 
+		\hline 
+	\end{tabular} 
+\end{table}
+Por otro lado también tendremos datos estadísticos para valorar las soluciones. Para cada uno de los siguientes datos también existirá su correspondiente media de todas las ejecuciones. Estos son: \begin{itemize}
+	\item tiempo inicial: Recogido antes de inicial la computación de los datos.
+	\item tiempo final: Cuando acaba la computación de los datos
+	\item tasa acierto: Porcentaje de aciertos que ha tenido una ejecución.
+	\item tasa reducción: Porcentaje de pesos que son inferior a 0.2
+	\item función objetivo: Función que intentaremos maximizar en cada clasificador.
+\end{itemize}
+\subsection{Ejecución de métodos de búsqueda}
+La forma de ejecutar todos los algoritmos la realizo de la misma forma. Realizo un separación de los datos usando la técnica de validación cruzada de 5 iteraciones. Esto consiste en separar los datos de forma uniforme. Para ello estoy usando la biblioteca \textbf{StratifiedKFold} de \textbf{sklearn}\cite{Baz}\\
+En el pseudocodigo del algoritmo \ref{alg:ejec} podemos ver  como se usa. Lo primero que se realiza es obtener las 5 particiones de datos diferentes. StratifiedKFold nos proporciona \textbf{k} grupos de datos. Cada grupo de datos esta formado dos partes una del 80\% y otra del 20\%. Es decir, la parte del test ira variando de un grupo a otro. En el algoritmo  se puede ver cuando obtenemos los tiempos, para cada ejecución. También recogemos los datos que usaremos en para realizar las comparaciones.
+\begin{algorithm}[H]
+	\begin{algorithmic}[1]
+		\State tiempoInicio = getTiempo()
+		\State tiempoAnterior = tiempoInicio
+		\State particiones = obtenerParticiones(datos, etiquetas,k=5)
+		\For{particion en particiones}
+		\State datosEstadisticos = clasificador(particion)
+		\State datosTotales += datosEstadisticos
+		\State tiempoActual = getTiempo()
+		\State tiempoAnterior = tiempoActual
+		\State mostrarDatosPorPantalla(datosEstadisticos,tiempoActual-tiempoAnterior)
+		\EndFor
+		\State tiempoActual = getTiempo()
+		\State mostrarDatosPorPantalla(datosTotales, tiempoActual-tiempoInicio)
+	\end{algorithmic}
+	\label{alg:ejec}
+	\caption{Algoritom para ejecutar los metodos de clasificacion}
+\end{algorithm}
+\subsection{Evaluador de soluciones}
+Para evaluar nuevos datos usando los pesos he usado un algoritmos que me ha cedido mi compañero de clase Antonio Molner Domenec. En el se hace uso de KDDTree, el cual genera un árbol con los vecinos. Realizando así una búsqueda de cual es el mas cercano. 
+\begin{algorithm}[H]
+	\begin{algorithmic}[1]
+		\State X = datos * pesos
+		\State X = eliminaDespreciables(X)
+		\State árbol = generoArbol(X)
+		\State vecinos = arbol.consulta(nuevoDato)
+		\State aciertos = media(clase(vecinos) == claseNuevoDato)
+		\State reducción = media(pesos < 0.2)
+		\State \Return aciertos, reducción, (aciertos+reducion)/2
+	
+	\end{algorithmic}
+	\label{alg:ejec}
+	\caption{Algoritmo para la evaluación de las soluciones}
+\end{algorithm}
+
+
+\section{Descripción de los métodos de búsqueda}
+\subsection{Clasificador 1-NN}
+Lo primero que hay que explicar en este apartado es el clasificador 1-NN. Ya que es la base. Para este  algoritmo tendremos que tener una función que nos devuelva la distancia entre  entre dos datos. En nuestro caso usaremos la distancia euclidea. Que viene definida por la siguiente ecuación, donde $e_{1} $ y $e_{2}$ es un vector con las características de cada elemento:
+
+\[ d_{e}\left(e_{1}, e_{2}\right)=\sqrt{\sum_{i}\left(e_{1}^{i}-e_{2}^{i}\right)^{2}} \]
+\begin{algorithm}[H]
+	\begin{algorithmic}[1]
+		\State 	claseMinima = etiquetas.primera
+		\State distanciaMinima = distancia(datos,datos.primero,nuevoDato)
+		\For{indice = 0 \textbf{hasta} tamaño(datos)}
+		\State distancia = distancia(datos,datos[indice],nuevoDato)
+		\If{distancia \textit{<} distanciaMinima)}
+		\State distanciaMinima = distancia
+		\State claseMinima = etiquetas[indice]
+		\EndIf % <- Here
+		\EndFor
+		
+		\State \Return claseMinima
+		
+	\end{algorithmic}
+	\label{alg:knn}
+	\caption{Algoritmo 1-NN}
+\end{algorithm}
+Una vez que tenemos la función de distancia lo único que tenemos que realizar es un simple bucle en el que recorramos todos los datos, y busquemos con cual tiene menor distancia el  nuevo dato. Cada vez que encontramos una distancia menor la guardamos y esa sera la clase de nuestro nuevo elemento. Al terminar lo único que hacemos es devolver la clase de ese dato. \\\\
+
+Una vez que tenemos el algoritmo que clasifica lo único que tendremos que realizar es bucle que vaya pasando nuevos datos al clasificador y comparar la solución que nos da. Si es igual a la etiqueta real del dato, tendremos un acierto mas. Por ultimo se devuelve la media de los datos y listo.
+\begin{algorithm}[H]
+	\begin{algorithmic}[1]
+		\State 	aciertos = 0
+		\For{indice, dato en datos\_test}
+		
+		\If{clasificador(datos,etiquetas,test) \textit{==} etiquetas\_test[indice]}
+		\State aciertos++
+		\EndIf % <- Here
+		
+		
+		\EndFor
+		
+		\State \Return aciertos / tamaño(datos\_test)
+		
+	\end{algorithmic}
+	\label{alg:knncount}
+	\caption{Algoritmo para contar datos bien clasificados con 1-NN}
+\end{algorithm}
+\subsection{Relief}
+El algoritmo \ref{alg:relief } de Relief tiene un funcionamiento muy sencillo. Lo primero que realizo es crear una matriz de distancia con sckit-learn\cite{Baz}. Esto lo realizo para  evitar tener que calcularla cada vez que evaluó un dato. Para crear el vector de pesos, tenemos que buscar el amigo y el enemigo mas cercano a cada dato. Para evitar realizar un bucle por cada, realizo una comparacion dentro del for que recorre buscando amigos y enemigos. La primera comparación busca que tengan diferente clase, si es asi y ademas tiene una distancia mejor que el mejor enemigo, ese se convierte en el mejor enemigo. La siguiente comparación busca que tengan la misma etiqueta, pero que sea un dato diferente, ademas miramos si la distancia entre ellos  y si es menor, ese dato se convierte en el mejor amigo.\\
+Una vez que hemos encontrado el mejor amigo y enemigo, podemos modificar el vector de pesos según aparece en las transparencias, donde $e_i$ es el dato que estamos comparando y $e_e$ y $e_a$ son mejor enemigo y mejor amigo respectivamente:
+\[ W=W+\left|e_{i}-e_{e}\right|-\left|e_{i}-e_{a}\right| \]
+\begin{algorithm}[H]
+	\begin{algorithmic}[1]
+		\State 	pesos = vector.zeros(tamaño(datos))
+		\State matrizDistancias = crearMatrizDistancias(datos, datos)
+		\For{indice, dato \textbf{en}  datos}
+			\State mejorEnemigo = inf
+			\State mejorAmigo = inf
+			\State enemigoMasCercano = -1
+			\State amigoMasCercano = -1
+			\For{indice2, dato2 \textbf{en}  datos}
+				\If{etiquetas[indice]  \textit{!=} etiquetas[indice2]}
+					\If{matrizDistancias[indice,indice2] \textbf{less} mejorEnemigo}
+						\State mejorEnemigo = matrizDistancias[indice,indice2]
+						\State enemigoMasCercano = dato2
+					\EndIf % <- Here
+				\EndIf % <- Here
+				\If{etiquetas[indice]  \textit{==} etiquetas[indice2] \textbf{and} }
+					\If{matrizDistancias[indice,indice2] \textbf{less} mejorAmigo}
+						\State mejorAmigo = matrizDistancias[indice,indice2]
+						\State amigoMasCercano = dato2
+					\EndIf % <- Here
+				\EndIf % <- Here
+			\EndFor
+			\State pesos = pesos + abs(dato-enemigoMasCercano) - abs(dato - amigoMasCercano)
+			
+		\EndFor
+		\State maxPeso=maximo(pesos)
+		\For{indice \textbf{en}  pesos}
+			\If{peso[indice]  \textbf{less} 0.2 }
+				\State peso[indice] = 0
+			\Else
+				\State peso[indice] = peso[indice] / maxPeso
+			\EndIf
+		\EndFor
+		\State \Return pesos
+		
+	\end{algorithmic}
+	\label{alg:relief}
+	\caption{Algoritmo RELIEF}
+\end{algorithm}
+\subsection{Búsqueda local}
+Este algoritmo de búsqueda local se basa en realizar mutaciones aleatorias en los pesos del modelo. Para esto tiene un máximo de iteraciones de 15000 o que no se haya modificado el vector completo por 20 veces. Las mutaciones la realiza a cada atributo por separado y si existe una mejora, se queda con ese nuevo peso, si no lo mejora vuelve a los pesos anteriores. La mutación se realiza en base a la Normal centrada en 0 y el valor se coge de forma aleatoria. Este algoritmo tarda mucho mas en ejecutarse que los demás ya que tiene que realizar muchas mas evaluaciones de la solución y esto es un proceso costoso. 
+
+\begin{algorithm}[H]
+	\begin{algorithmic}[1]
+		\State pesos = generarPesosAleatorio()
+		\State mejorEstadisticos = evaluar(pesos,datos,etiquetas)
+		
+		\State cantCaractarteristicas = tamaño(peso)
+		\State cantEjecuciones = 0
+		\State cantExplorados = 0
+		
+		\While{cantEjecuciones \textbf{less} MAX and cantExplorados \textbf{less}  (20*cantCaractarteristicas)} 
+			\For{indice \textbf{hasta}  cantCaractarteristicas}
+				\State cantExplorados += 1
+				\State cantEjecuciones += 1
+				\State pesosactual =  copia(pesos)
+				\State Z =  random.normal(0.0, pow(0.3,2))
+				\State pesosactual[indice] += Z
+				\If{pesosactual[indice]  \textbf{great} 1 }
+					\State pesosactual[y]=1
+				\ElsIf{pesosactual[indice]\textbf{less}0} :
+					\State pesosactual[y]=0
+				\EndIf
+				\If{ pesosactual[indice] \textbf{!=} W[y] and pesos[indice] \textbf{great} 0.2}
+				\State estadisticos = evaluar(pesos,datos,etiquetas)
+				\If{ estadisticos \textbf{great} mejorEstadisticos}
+					\State mejorEstadisticos = estadisticos
+					\State pesos =  copia(pesosactual)
+					\State cantExplorados = 0
+					\State \textbf{break}
+				\EndIf
+				\EndIf
+			 \EndFor
+		\EndWhile
+		\State \Return pesos
+	\end{algorithmic}
+	\label{alg:bl}
+	\caption{Algoritmo de busqueda local}
+\end{algorithm}
+
+Una vez que el algoritmo ha terminado de ejecutar se evaluara el resultado de los pesos generado con los datos de train y se obtendrán los datos estadísticos que se muestran.
+
+\section{Experimentos}
+Para los experimentos que he utilizado he usado una semilla con valor 42. El experimento ha consistido en en realizar la validación cruzada de 5 iteraciones en todos los algoritmos y en todos los set de datos. Y con ellos he obtenido los resultado que detallare a continuacion para cada uno de los metodos. Todos los estadisticos estan expresados en porcentaje 100 excepto el tiempo que esta expresado en segundo.
+He mostrado los datos por separado ya que en una sola tabla no me entraban todos.
+\subsection{Clasificador 1-NN}
+Los datos de clasificación y tiempo obtenidos para colposcopy con esta clasificación se pueden ver en la Tabla \ref{tab:1colposcopy}
+\begin{table}[H]
+	\centering
+	\caption {Los datos obtenidos para colposcopy en 1-NN} \label{tab:1colposcopy} 
+	
+	\begin{tabular}{|l|r|r|}
+		\hline
+		& Tasa clasificacion & Tiempo\\
+		\hline
+		Particion 1 & 90 & 0.346 \\
+		\hline
+		Particion 2 & 94 & 0.342 \\
+		\hline
+		Particion 3 & 90 & 0.408\\
+		\hline
+		Particion 4 & 91.81818 &  0.354\\
+		\hline
+		Particion 5 & 94.54545 & 0.342 \\
+		\hline
+		Media & 92.1818 & 0.3586 \\
+		\hline
+	\end{tabular}
+\end{table}
+Los datos de clasificación y tiempo obtenidos para texture con esta clasificación se pueden ver en la Tabla \ref{tab:1texture}
+\begin{table}[H]
+	\centering
+	\caption {Los datos obtenidos para texture en 1-NN} \label{tab:1texture} 
+	
+	\begin{tabular}{|l|r|r|}
+		\hline
+		& Tasa clasificación & Tiempo\\
+		\hline
+		Particion 1 & 77.9661 & 0.094 \\
+		\hline
+		Particion 2 & 73.6842 & 0.087 \\
+		\hline
+		Particion 3 & 70.1754 & 0.092\\
+		\hline
+		Particion 4 & 75.4385 & 0.089\\
+		\hline
+		Particion 5 & 71.9298 & 0.09 \\
+		\hline
+		Media & 73.8388 & 0.0904 \\
+		\hline
+	\end{tabular}
+\end{table} 
+Los datos de clasificación y tiempo obtenidos para ionosphere con esta clasificación se pueden ver en la Tabla \ref{tab:1ionosphere}
+\begin{table}[H]
+	\centering
+	\caption {Los datos obtenidos para ionosphere en Relief} \label{tab:1ionosphere} 
+	
+	\begin{tabular}{|l|r|r|}
+		\hline
+		& Tasa clasificacion & Tiempo\\
+		\hline
+		Particion 1 & 84.5070 & 0.279 \\
+		\hline
+		Particion 2 & 90 & 0.133 \\
+		\hline
+		Particion 3 &  85.7142 &  0.129\\
+		\hline
+		Particion 4 & 87.1428 &  0.131\\
+		\hline
+		Particion 5 & 84.2857 & 0.131 \\
+		\hline
+		Media &86.3299 & 0.16060 \\
+		\hline
+	\end{tabular}
+\end{table}
+\subsection{Relief}
+Los datos estadisticos obtenidos para texture con esta clasificación se pueden ver en la Tabla \ref{tab:rcolposcopy}
+\begin{table}[H]
+	\centering
+	\caption {Los datos obtenidos para texture en Relief} \label{tab:r} 
+	
+	\begin{tabular}{|l|r|r|r|r|}
+		\hline
+		& Tasa clasificacion &Tasa reducción &Tasa agregación & Tiempo\\
+		\hline
+		Particion 1 & 69.4915 &45.1612 & 57.3264& 0.134 \\
+		\hline
+		Particion 2 & 82.45614 & 45.161& 63.808& 0.102 \\
+		\hline
+		Particion 3 & 61.4035 & 27.4193& 44.41143& 0.093\\
+		\hline
+		Particion 4 & 63.1578 & 27.41935& 45.2886 &  0.095\\
+		\hline
+		Particion 5 & 75.438 & 41.93548&58.6870 & 0.142 \\
+		\hline
+		Media &70.3895 &37.41935 &53.9044 & 0.1136 \\
+		\hline
+	\end{tabular}
+\end{table}
+Los datos estadisticos obtenidos para ionosphere con esta clasificación se pueden ver en la Tabla \ref{tab:rionosphere}
+\begin{table}[H]
+	\centering
+	\caption {Los datos obtenidos para ionosphere en 1-NN} \label{tab:rionosphere} 
+	
+	\begin{tabular}{|l|r|r|r|r|}
+		\hline
+		& Tasa clasificacion &Tasa reducción &Tasa agregación & Tiempo\\
+		\hline
+		Particion 1 & 78.8732 &2.9411 & 40.9072& 0.134 \\
+		\hline
+		Particion 2 & 78.57142 & 2.9411& 40.7563& 0.102 \\
+		\hline
+		Particion 3 &  77.1428 & 2.9411& 40.0420& 0.093\\
+		\hline
+		Particion 4 & 82.8571 & 2.9411&42.8991 &  0.095\\
+		\hline
+		Particion 5 & 81.4257 & 2.94115&42.1887 & 0.142 \\
+		\hline
+		Media & 79.7764 & 2.9411 &41.3579 & 0.1136 \\
+		\hline
+	\end{tabular}
+\end{table}
+Los datos estadisticos obtenidos para colposcopy con esta clasificación se pueden ver en la Tabla \ref{tab:rcolposcopy}
+\begin{table}[H]
+	\centering
+	\caption {Los datos obtenidos para colposcopy en Relief} \label{tab:rcolposcopy} 
+	
+	\begin{tabular}{|l|r|r|r|r|}
+		\hline
+		& Tasa clasificacion &Tasa reducción &Tasa agregación & Tiempo\\
+		\hline
+		Particion 1 & 92.7272 &15 & 53.8636& 0.2435 \\
+		\hline
+		Particion 2 & 86.3636 & 2.5& 45.6818& 0.2462 \\
+		\hline
+		Particion 3 & 83.63636 & 2.5& 43.0681& 0.272\\
+		\hline
+		Particion 4 & 84.5454 & 7.5&43.5227 &  0.276\\
+		\hline
+		Particion 5 & 85.45454 & 5&46.4772 & 0.231 \\
+		\hline
+		Media & 86.5454 &6.5 &46.5227 & 0.2636 \\
+		\hline
+	\end{tabular}
+\end{table}
+
+\subsection{Busqueda local}
+Los datos estadisticos obtenidos para colposcopy con esta clasificación se pueden ver en la Tabla \ref{tab:rcolposcopy}
+\begin{table}[H]
+	\centering
+	\caption {Los datos obtenidos para texture en Busqueda local} \label{tab:rcolposcopy} 
+	
+	\begin{tabular}{|l|r|r|r|r|}
+		\hline
+		& Tasa clasificacion &Tasa reducción &Tasa agregación & Tiempo\\
+		\hline
+		Particion 1 & 82.72727 &22.5 & 52.61363& 344.471 \\
+		\hline
+		Particion 2 & 81.8181 & 27.5& 54.6590& 367.177 \\
+		\hline
+		Particion 3 & 74.5454 & 47.5& 61.0227& 441.333 \\
+		\hline
+		Particion 4 & 85.4545 & 37.5& 61.4772 &  405.743\\
+		\hline
+		Particion 5 & 88.1818 & 55&71.59090 & 296.004 \\
+		\hline
+		Media &82.5454 &38.0 &60.27274 & 370.9456 \\
+		\hline
+	\end{tabular}
+\end{table}
+Los datos estadisticos obtenidos para ionosphere con esta clasificación se pueden ver en la Tabla \ref{tab:bionosphere}
+\begin{table}[H]
+	\centering
+	\caption {Los datos obtenidos para ionosphere en Busqueda local} \label{tab:bionosphere} 
+	
+	\begin{tabular}{|l|r|r|r|r|}
+		\hline
+		& Tasa clasificación &Tasa reducción &Tasa agregación & Tiempo\\
+		\hline
+		Particion 1 & 83.0985 &44.1176&63.6081 &242.917 \\
+		\hline
+		Particion 2 & 82.85714 & 47.05882& 64.9579& 356.888 \\
+		\hline
+		Particion 3 &  78.5714 & 35.2941& 56.9327&135.301\\
+		\hline
+		Particion 4 & 81.42857& 44.117647&62.7731 &  199.422\\
+		\hline
+		Particion 5 & 85.71428 &  54.62184&54.62184 & 635.08 \\
+		\hline
+		Media & 82.3340 & 2.9411 &60.57876 & 313.9216 \\
+		\hline
+	\end{tabular}
+\end{table}
+Los datos estadisticos obtenidos para texture con esta clasificación se pueden ver en la Tabla \ref{tab:btexture}
+\begin{table}[H]
+	\centering
+	\caption {Los datos obtenidos para colposcopy en Busqueda local} \label{tab:btexture} 
+	
+	\begin{tabular}{|l|r|r|r|r|}
+		\hline
+		& Tasa clasificacion &Tasa reducción &Tasa agregación & Tiempo\\
+		\hline
+		Particion 1 & 67.7966 &40.322 & 54.0595& 865.957 \\
+		\hline
+		Particion 2 & 75.4385 & 41.9354& 58.6870& 292.145\\
+		\hline
+		Particion 3 &64.9122 & 41.9354& 53.4288& 265.035\\
+		\hline
+		Particion 4 & 61.4035 & 48.3870&54.8953 &  390.866\\
+		\hline
+		Particion 5 & 64.403 & 51.6129&58.2625 & 556.41 \\
+		\hline
+		Media &  66.8926 &44.8387 &55.865 & 474.0826 \\
+		\hline
+	\end{tabular}
+\end{table}
+\subsection{Resumen}
+Viendo los datos podemos observar que el que mejor se comporta posiblemente sea el de 1-nn ya que obtiene mas tasa de acierto, y eso se puede a la forma en la que se encuentran nuestros datos. Ya que es posible que las clases están muy separadas entre si y con el vecino mas cercano sea suficiente para predecir la clase a la que pertenece.Ademas al ser un algoritmo lineal es muy rapido de realizar. \\\\
+Por otro lado tenemos Relief y Busqueda local. Relief es cierto que es mucho mas rápido, pero no obstante los resultado de la búsqueda local son mejores. Esto se debe a que solo se muta si ha mejorado el valor de la tasa de agregación, obtenido así mejores resultado. Ademas con la mutación aleatoria, no cae en ningún mínimo local.
+\clearpage
+\begin{thebibliography}{H}
+	\bibitem{spiz} \href{www.scipy.org}{SciPy},
+	\textit{Biblioteca open source de herramientas y algoritmos matemáticos para Python } 
+	\bibitem{Baz} \href{https://scikit-learn.org}{scikit-learn},
+	\textit{Biblioteca para aprendizaje de máquina de software libre para el lenguaje de programación Python} 
+\end{thebibliography}
+\end{document}

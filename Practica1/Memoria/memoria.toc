@@ -1,0 +1,15 @@
+\babel@toc {spanish}{}
+\contentsline {section}{\numberline {1}Descripci\IeC {\'o}n del problema}{3}{section.1}
+\contentsline {section}{\numberline {2}Descripci\IeC {\'o}n de los algoritmos comunes}{3}{section.2}
+\contentsline {subsection}{\numberline {2.1}Representaci\IeC {\'o}n de los datos}{4}{subsection.2.1}
+\contentsline {subsection}{\numberline {2.2}Ejecuci\IeC {\'o}n de m\IeC {\'e}todos de b\IeC {\'u}squeda}{4}{subsection.2.2}
+\contentsline {subsection}{\numberline {2.3}Evaluador de soluciones}{5}{subsection.2.3}
+\contentsline {section}{\numberline {3}Descripci\IeC {\'o}n de los m\IeC {\'e}todos de b\IeC {\'u}squeda}{6}{section.3}
+\contentsline {subsection}{\numberline {3.1}Clasificador 1-NN}{6}{subsection.3.1}
+\contentsline {subsection}{\numberline {3.2}Relief}{7}{subsection.3.2}
+\contentsline {subsection}{\numberline {3.3}B\IeC {\'u}squeda local}{8}{subsection.3.3}
+\contentsline {section}{\numberline {4}Experimentos}{10}{section.4}
+\contentsline {subsection}{\numberline {4.1}Clasificador 1-NN}{10}{subsection.4.1}
+\contentsline {subsection}{\numberline {4.2}Relief}{11}{subsection.4.2}
+\contentsline {subsection}{\numberline {4.3}Busqueda local}{12}{subsection.4.3}
+\contentsline {subsection}{\numberline {4.4}Resumen}{13}{subsection.4.4}
