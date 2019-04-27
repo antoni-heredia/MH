@@ -205,7 +205,7 @@ def BL(_train, _y_train):
 			_cantEjecuciones += 1
 			#creo una copia del _W anterior y lo muto
 			W_actual =  np.copy(W)
-			Z =  np.random.normal(0.0, pow(0.3,2))
+			Z =  np.random.normal(0.0, 0.3)
 			W_actual[y] += Z
 
 			#normalizo los datos segun pone en las transparencias
@@ -281,9 +281,9 @@ dataI, targetI = cargarDatos(IONOSPHERE,'str')
 
 #relief
 print("--------------------Ejecucion Knn--------------------")
-print("--------------------COLPOSCOPY--------------------")
-ejecutarKNN(dataC, targetC)
 print("--------------------TEXTURE--------------------")
+ejecutarKNN(dataC, targetC)
+print("------------------COLPOSCOPY----------------------")
 ejecutarKNN(dataT, targetT)
 print("--------------------IONOSPHERE--------------------")
 ejecutarKNN(dataI, targetI)
