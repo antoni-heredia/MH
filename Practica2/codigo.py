@@ -7,18 +7,14 @@ Created on Tue Mar 19 17:46:32 2019
 """
 #documento para el 1-knn http://www.sc.ehu.es/ccwbayes/docencia/mmcc/docs/t9knn.pdf
 from math import sqrt
-
-import time
-from beautifultable import BeautifulTable
-import numpy as np
 from scipy.io import arff
 import pandas as pd
 from sklearn import preprocessing
+import numpy as np
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.model_selection import StratifiedKFold
-
-from sklearn.neighbors import KDTree
-
+import time
+from scipy.spatial import KDTree
 #para obtener el tiempo en milisegundos
 current_milli_time = lambda: int(round(time.time() * 1000))
 
@@ -57,7 +53,6 @@ def RELIEF(_data, _target):
 		_mejorAmigo = float('Inf')
 		_enemigoMasCercano = -1
 		_amigoMasCercano = -1
-
 		#recorro todos los datos buscando su amgigo y enemigo mas cercano
 		for _y1, _fila1 in enumerate(_data):
 			if(_target[_y1] != _target[_x]):
@@ -84,7 +79,7 @@ def RELIEF(_data, _target):
 
 def ejecucionRelief(_data, _target):
 	_inicio = current_milli_time()
-	_time_actual = _inicio	#Realizo las 5 particiones con mezcla y semilla
+	#Realizo las 5 particiones con mezcla y semilla
 	skf = StratifiedKFold(n_splits=5, shuffle = True,  random_state = SEMILLA)
 	skf.get_n_splits(_data, _target)
 	#recorro cada una de las
@@ -92,8 +87,6 @@ def ejecucionRelief(_data, _target):
 	sumatoriaRed = 0
 	sumatoriaAgregada = 0
 	_cont = 1
-	tabla = BeautifulTable()
-	tabla.column_headers = ["Particion","%cls","%redu","%agr", "tiempo"]
 	for _train_index, _test_index in skf.split(_data, _target):
 		#obtengo las particiones de test y train
 		X_train, _X_test = _data[_train_index], _data[_test_index]
@@ -105,18 +98,21 @@ def ejecucionRelief(_data, _target):
 		sumatoriaClas += tasa_clas
 		sumatoriaRed += tasa_red
 		sumatoriaAgregada += tasa_agr
-		time_anterior= _time_actual
-		_time_actual =current_milli_time()
-		tabla.append_row([_cont, tasa_clas, tasa_red,tasa_agr,( (_time_actual - time_anterior) / 1000.0)])
-
+		print("--------------------"+str(_cont) +"º particion-------------------")
+		print ("Tasa de clasificacion: " + str(tasa_clas))
+		print ("Tasa de reduccion: "+ str(tasa_red))
+		print ("Tasa agregada: "+ str(tasa_agr))
 		_cont += 1
 
 	_final = current_milli_time()
 	#calculo el tiempo de ejecucion
 	diferencia =(_final- _inicio) / 1000.0
 	#muestro los estadisticos
-	tabla.append_row(["Media",sumatoriaClas/5,sumatoriaRed/5,sumatoriaAgregada/5,(diferencia/5)])
-	print(tabla)
+	print("----------------Medias estadisticas del experimento-----------------------")
+	print("Media de tasa de clasificacion: " + str(sumatoriaClas/5))
+	print("Media de tasa de reduccion: " + str(sumatoriaRed/5))
+	print("Media de tasa de agregada: " + str(sumatoriaAgregada/5))
+	print("El tiempo total de ejucion ha sido: "+str(diferencia)+" segundos ")
 
 def distancia(X, pos1, _fila):
 	return sqrt(np.sum(np.power(X[pos1]-_fila, 2)))
@@ -150,9 +146,9 @@ def ejecutarKNN(_data, _target):
 	skf.get_n_splits(_data, _target)
 	#recorro cada una de las
 	sumatoriaClas = 0
+	sumatoriaRed = 0
+	sumatoriaAgregada = 0
 	_cont = 1
-	tabla = BeautifulTable()
-	tabla.column_headers = ["Particion","%cls", "tiempo"]
 	for _train_index, _test_index in skf.split(_data, _target):
 		#obtengo las particiones de test y train
 		X_train, _X_test = _data[_train_index], _data[_test_index]
@@ -165,7 +161,9 @@ def ejecutarKNN(_data, _target):
 		_time_actual =current_milli_time()
 		sumatoriaClas += tasa_clas
 
-		tabla.append_row([_cont, tasa_clas,( (_time_actual - time_anterior) / 1000.0)])
+		print("--------------------"+str(_cont) +"º particion-------------------")
+		print ("Tasa de clasificacion: " + str(tasa_clas))
+		print("El tiempo ha sido: "+str((_time_actual - time_anterior) / 1000.0)+" segundos ")
 
 		_cont += 1
 
@@ -173,8 +171,11 @@ def ejecutarKNN(_data, _target):
 	#calculo el tiempo de ejecucion
 	diferencia =(_final- _inicio) / 1000.0
 	#muestro los estadisticos
-	tabla.append_row(["Media", tasa_clas/5,diferencia/5])
-	print(tabla)
+	print("----------------Medias estadisticas del experimento-----------------------")
+	print("Media de tasa de clasificacion: " + str(sumatoriaClas/5))
+	print("Media de tasa de reduccion: " + str(sumatoriaRed/5))
+	print("Media de tasa de agregada: " + str(sumatoriaAgregada/5))
+	print("El tiempo promedio de ejucion ha sido: "+str(diferencia/5)+" segundos ")
 
 def evaluate(weights, X, y):
     X_transformed = (X * weights)[:, weights > 0.2]
@@ -235,8 +236,6 @@ def ejecutarBL(_data, _target):
 	sumatoriaRed = 0
 	sumatoriaAgregada = 0
 	_cont = 1
-	tabla = BeautifulTable()
-	tabla.column_headers = ["Particion","%cls","%redu","%agr", "tiempo"]
 	for _train_index, _test_index in skf.split(_data, _target):
 		#obtengo las particiones de test y train
 		X_train, _X_test = _data[_train_index], _data[_test_index]
@@ -251,15 +250,23 @@ def ejecutarBL(_data, _target):
 		sumatoriaClas += tasa_clas
 		sumatoriaRed += tasa_red
 		sumatoriaAgregada += tasa_agr
-		tabla.append_row([_cont, tasa_clas, tasa_red,tasa_agr,( (_time_actual - time_anterior) / 1000.0)])
+		print("--------------------"+str(_cont) +"º particion-------------------")
+		print ("Tasa de clasificacion: " + str(tasa_clas))
+		print ("Tasa de reduccion: "+ str(tasa_red))
+		print ("Tasa agregada: "+ str(tasa_agr))
+		print("El tiempo ha sido: "+str((_time_actual - time_anterior) / 1000.0)+" segundos ")
+
 		_cont += 1
 
 	_final = current_milli_time()
 	#calculo el tiempo de ejecucion
 	diferencia =(_final- _inicio) / 1000.0
 	#muestro los estadisticos
-	tabla.append_row(["Media",sumatoriaClas/5,sumatoriaRed/5,sumatoriaAgregada/5,(diferencia/5)])
-	print(tabla)
+	print("----------------Medias estadisticas del experimento-----------------------")
+	print("Media de tasa de clasificacion: " + str(sumatoriaClas/5))
+	print("Media de tasa de reduccion: " + str(sumatoriaRed/5))
+	print("Media de tasa de agregada: " + str(sumatoriaAgregada/5))
+	print("El tiempo promedio de ejucion ha sido: "+str(diferencia/5)+" segundos ")
 
 
 
@@ -268,8 +275,8 @@ TEXTURE = "ConjuntosDatos/texture.arff"
 COLPOSCOPY = "ConjuntosDatos/colposcopy.arff"
 IONOSPHERE = "ConjuntosDatos/ionosphere.arff"
 
-dataC, targetC = cargarDatos(COLPOSCOPY,'int')
 dataT, targetT = cargarDatos(TEXTURE,'int')
+dataC, targetC = cargarDatos(COLPOSCOPY,'int')
 dataI, targetI = cargarDatos(IONOSPHERE,'str')
 
 #relief
