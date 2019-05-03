@@ -22,7 +22,7 @@ from sklearn.neighbors import KDTree
 #para obtener el tiempo en milisegundos
 current_milli_time = lambda: int(round(time.time() * 1000))
 
-SEMILLA = 42
+SEMILLA = 1
 #carga los datos y los devuelve normalizados
 def cargarDatos(ubicacion, typedat):
 
@@ -203,24 +203,23 @@ def BL(_train, _y_train):
 			_cantExplorados += 1
 			_cantEjecuciones += 1
 			#creo una copia del _W anterior y lo muto
-			W_actual =  np.copy(W)
+			W_anterior =  W[y]
 			Z =  np.random.normal(0.0, 0.3)
-			W_actual[y] += Z
+			W[y] += Z
 
 			#normalizo los datos segun pone en las transparencias
-			if W_actual[y]>1:
-				W_actual[y]=1
-			elif W_actual[int(y)]<0:
-				W_actual[y]=0
+			if W[y]>1:
+				W[y]=1
+			elif W[int(y)]<0:
+				W[y]=0
 
-			if W_actual[y] != W[y] and W[y] > 0.2 :
-				acu, red, actual_tasa_agr = evaluate(W_actual,_train,_y_train)
-				if(actual_tasa_agr > mejor_tasa_agr):
-					W =np.copy(W_actual)
-					mejor_tasa_agr = actual_tasa_agr
-					#Reseteo la cantidad de explorados sin mejorar
-					_cantExplorados = 0
-					break
+			acu, red, actual_tasa_agr = evaluate(W,_train,_y_train)
+			if(actual_tasa_agr > mejor_tasa_agr):
+				mejor_tasa_agr = actual_tasa_agr
+				#Reseteo la cantidad de explorados sin mejorar
+				_cantExplorados = 0
+			else:
+				 W[y] = W_anterior
 
 	return W
 
