@@ -222,7 +222,43 @@ def BL(_train, _y_train):
 				 W[y] = W_anterior
 
 	return W
+def BLMEME(_train, _y_train,w, maxi):
 
+
+	W = w
+	#prueba = evalu(W,_train,_y_train)
+	acu, red, mejor_tasa_agr = evaluate(W,_train,_y_train)
+	_MAX = maxi
+
+	_cantCaractarteristicas = W.size
+	_cantEjecuciones = 0
+	_cantExplorados = 0
+
+	while(_cantEjecuciones < _MAX and _cantExplorados < (20*_cantCaractarteristicas)):
+		for y in range(W.size):
+			#he explorado uno mas y la cantidad de ejecuciones es una mas
+			_cantExplorados += 1
+			_cantEjecuciones += 1
+			#creo una copia del _W anterior y lo muto
+			W_anterior =  W[y]
+			Z =  np.random.normal(0.0, 0.3)
+			W[y] += Z
+
+			#normalizo los datos segun pone en las transparencias
+			if W[y]>1:
+				W[y]=1
+			elif W[int(y)]<0:
+				W[y]=0
+
+			acu, red, actual_tasa_agr = evaluate(W,_train,_y_train)
+			if(actual_tasa_agr > mejor_tasa_agr):
+				mejor_tasa_agr = actual_tasa_agr
+				#Reseteo la cantidad de explorados sin mejorar
+				_cantExplorados = 0
+			else:
+				 W[y] = W_anterior
+
+	return W
 def ejecutarBL(_data, _target):
 	_inicio = current_milli_time()
 	_time_actual = _inicio
@@ -482,7 +518,7 @@ def AGEBLX(train, y_train):
 
     TAM_POBLACION = 30
     MEJORES = 2
-    PRO_MUT = 0.001
+    PRO_MUT = 0.01
     CANTMUTACIONES = int(MEJORES*PRO_MUT*train[0].size)
 
     pobla = []
@@ -555,6 +591,8 @@ def AGEBLX(train, y_train):
                 peor = actual
                 indicePeor = i
         pobla = np.delete(pobla, indicePeor, axis=0)
+        evalu = np.delete(evalu, indicePeor, axis=0)
+
         peor = [100,100,100]
         for i in range(TAM_POBLACION-1):
             cantEjecuciones+=1		
@@ -564,9 +602,21 @@ def AGEBLX(train, y_train):
                 peor = actual
                 indicePeor = i               
         pobla = np.delete(pobla, indicePeor, axis=0)
-        
+        evalu = np.delete(evalu, indicePeor, axis=0)
+
         pobla = np.concatenate((pobla,uno))
-        pobla = np.concatenate((pobla,dos))  
+        pobla = np.concatenate((pobla,dos))
+        
+        uno = uno.reshape(-1,)
+        dos = dos.reshape(-1,)
+        primero = evaluate(uno,train,y_train)
+        segundo = evaluate(dos,train,y_train)
+        
+        evalu = np.concatenate((evalu, np.asarray(primero).reshape(1,len(primero))))
+        evalu = np.concatenate((evalu, np.asarray(segundo).reshape(1,len(segundo))))
+
+
+
         
     mejor = [0,0,0]
     indiceMejor = 0
@@ -575,6 +625,120 @@ def AGEBLX(train, y_train):
         if actual[2] > mejor[2]:
             mejor = actual
             indiceMejor = i
+    return pobla[indiceMejor]
+
+def AGEAC(train, y_train):
+
+    TAM_POBLACION = 30
+    MEJORES = 2
+    PRO_MUT = 0.01
+    CANTMUTACIONES = int(MEJORES*PRO_MUT*train[0].size)
+
+    pobla = []
+    evalu = []
+    #creo la poblacion y los evaluo a todos.
+    for i in range(TAM_POBLACION):
+        pobla.append( np.random.random(train[0].size))
+        evalu.append(evaluate(pobla[i],train, y_train))
+    pobla = np.asarray(pobla)
+    
+    MAX = 15000
+    cantEjecuciones = 0
+    mejor = np.random.random(train[0].size)
+    while(cantEjecuciones < MAX):
+        
+        
+        valmejor = [0,0,0];
+        mejores = []
+        for i in range(MEJORES):
+            row_i = np.random.choice(pobla.shape[0],1)
+            primero = pobla[row_i, :]
+            primero = primero.reshape(-1,)
+            agre_actual1 = evalu[row_i[0]]
+
+            row_i = np.random.choice(pobla.shape[0],1)
+            segundo = pobla[row_i, :] 
+            segundo = segundo.reshape(-1,)
+            agre_actual2 = evalu[row_i[0]]
+
+            if(agre_actual1[2] > agre_actual2[2]):
+                mejores.append(primero)
+                if(agre_actual1[2] > valmejor[2]):
+                    valmejor = agre_actual1
+                    mejor = primero
+            else:
+                mejores.append(segundo)
+                if(agre_actual2[2] > valmejor[2]):
+                    valmejor = agre_actual2
+                    mejor = segundo
+                    
+        mejores = np.asarray(mejores)
+        
+       
+        uno,dos = cx_arithmetic(mejores[0], mejores[1])    
+
+        uno = uno.reshape(1,uno.size)
+        dos = dos.reshape(1,dos.size)
+
+        mejores = np.concatenate((uno,dos))
+        
+        for i in range(CANTMUTACIONES):
+            indiceCromo = randint(0,MEJORES-1)
+            genAMutar = randint(0,train[0].size-1)
+            Z =  np.random.normal(0.0, 0.3)
+            mejores[indiceCromo][genAMutar] += Z
+            if mejores[indiceCromo][genAMutar]  > 1:
+                mejores[indiceCromo][genAMutar] = 1
+            elif mejores[indiceCromo][genAMutar]  < 0:
+                mejores[indiceCromo][genAMutar] = 0
+               
+      
+        peor = [100,100,100]
+        indicePeor = 0
+        for i in range(TAM_POBLACION):
+            cantEjecuciones+=1
+            actual = evaluate(pobla[i],train, y_train)
+            evalu[i] = actual
+
+            if peor[2] > actual[2]:
+                peor = actual
+                indicePeor = i
+        pobla = np.delete(pobla, indicePeor, axis=0)
+        evalu = np.delete(evalu, indicePeor, axis=0)
+
+        peor = [100,100,100]
+        for i in range(TAM_POBLACION-1):
+            cantEjecuciones+=1		
+            actual = evaluate(pobla[i],train, y_train)
+            evalu[i] = actual
+            if peor[2] > actual[2]:
+                peor = actual
+                indicePeor = i               
+        pobla = np.delete(pobla, indicePeor, axis=0)
+        evalu = np.delete(evalu, indicePeor, axis=0)
+
+        pobla = np.concatenate((pobla,uno))
+        pobla = np.concatenate((pobla,dos))
+        
+        uno = uno.reshape(-1,)
+        dos = dos.reshape(-1,)
+        primero = evaluate(uno,train,y_train)
+        segundo = evaluate(dos,train,y_train)
+        
+        evalu = np.concatenate((evalu, np.asarray(primero).reshape(1,len(primero))))
+        evalu = np.concatenate((evalu, np.asarray(segundo).reshape(1,len(segundo))))
+
+
+
+        
+    mejor = [0,0,0]
+    indiceMejor = 0
+    for i in range(pobla.shape[0]):
+        actual =evaluate(pobla[i],train, y_train)
+        if actual[2] > mejor[2]:
+            mejor = actual
+            indiceMejor = i
+
     return pobla[indiceMejor]
 
 def ejecutarAGGBLX(_data, _target):
@@ -641,7 +805,6 @@ def ejecutarAGGCA(_data, _target):
 		sumatoriaClas += tasa_clas
 		sumatoriaRed += tasa_red
 		sumatoriaAgregada += tasa_agr
-		print(str(tasa_clas)+"-" +str(tasa_red)+" "+str(tasa_agr))
 		tabla.append_row([_cont, tasa_clas, tasa_red,tasa_agr,( (_time_actual - time_anterior) / 1000.0)])
 		_cont += 1
 
@@ -680,7 +843,6 @@ def ejecutarAGEBLX(_data, _target):
 		sumatoriaClas += tasa_clas
 		sumatoriaRed += tasa_red
 		sumatoriaAgregada += tasa_agr
-		print(str(tasa_clas)+"-" +str(tasa_red)+" "+str(tasa_agr))
 		tabla.append_row([_cont, tasa_clas, tasa_red,tasa_agr,( (_time_actual - time_anterior) / 1000.0)])
 		_cont += 1
 
@@ -689,7 +851,274 @@ def ejecutarAGEBLX(_data, _target):
 	diferencia =(_final- _inicio) / 1000.0
 	#muestro los estadisticos
 	tabla.append_row(["Media",sumatoriaClas/5,sumatoriaRed/5,sumatoriaAgregada/5,(diferencia/5)])
-	print(tabla)    
+	print(tabla)
+
+def ejecutarAGEAC(_data, _target):
+	_inicio = current_milli_time()
+	_time_actual = _inicio
+	#Realizo las 5 particiones con mezcla y semilla
+	skf = StratifiedKFold(n_splits=5, shuffle = True,  random_state = SEMILLA)
+	skf.get_n_splits(_data, _target)
+	#recorro cada una de las
+	sumatoriaClas = 0
+	sumatoriaRed = 0
+	sumatoriaAgregada = 0
+	_cont = 1
+	tabla = BeautifulTable()
+	tabla.column_headers = ["Particion","%cls","%redu","%agr", "tiempo"]
+	for _train_index, _test_index in skf.split(_data, _target):
+		#obtengo las particiones de test y train
+		X_train, _X_test = _data[_train_index], _data[_test_index]
+		y_train, _y_test = _target[_train_index], _target[_test_index]
+		#obtengo los pèsos para esta particion
+		_W  = AGEAC(X_train, y_train)
+
+		#obtengo las tasas  de evaular la solución
+		tasa_clas, tasa_red, tasa_agr = evaluate(_W,_X_test,_y_test)
+		time_anterior= _time_actual
+		_time_actual =current_milli_time()
+		sumatoriaClas += tasa_clas
+		sumatoriaRed += tasa_red
+		sumatoriaAgregada += tasa_agr
+		tabla.append_row([_cont, tasa_clas, tasa_red,tasa_agr,( (_time_actual - time_anterior) / 1000.0)])
+		_cont += 1
+
+	_final = current_milli_time()
+	#calculo el tiempo de ejecucion
+	diferencia =(_final- _inicio) / 1000.0
+	#muestro los estadisticos
+	tabla.append_row(["Media",sumatoriaClas/5,sumatoriaRed/5,sumatoriaAgregada/5,(diferencia/5)])
+	print(tabla)
+
+def AM(train, y_train, GENE, PLS, TAM ):
+    
+    TAM_POBLACION = TAM
+    PRO_CRUCE = 0.7
+    PRO_MUT = 0.01
+    CANT_CRUCES = int(TAM_POBLACION*PRO_CRUCE)
+    CANTMUTACIONES = int(TAM_POBLACION*PRO_MUT*train[0].size)
+
+    pobla = []
+    evalu = []
+    #creo la poblacion y los evaluo a todos.
+    for i in range(TAM_POBLACION):
+        pobla.append( np.random.random(train[0].size))
+        evalu.append(evaluate(pobla[i],train, y_train))
+    pobla = np.asarray(pobla)
+    
+    MAX = 15000
+    cantEjecuciones = 0
+    mejor = np.random.random(train[0].size)
+    generacion  = 0
+    while(cantEjecuciones < MAX):
+        
+        generacion += 1
+        valmejor = [0,0,0];
+        mejores = []
+        for i in range(TAM_POBLACION):
+            row_i = np.random.choice(pobla.shape[0],1)
+            primero = pobla[row_i, :]
+            primero = primero.reshape(-1,)
+            agre_actual1 = evalu[row_i[0]]
+
+            row_i = np.random.choice(pobla.shape[0],1)
+            segundo = pobla[row_i, :] 
+            segundo = segundo.reshape(-1,)
+            agre_actual2 = evalu[row_i[0]]
+
+            if(agre_actual1[2] > agre_actual2[2]):
+                mejores.append(primero)
+                if(agre_actual1[2] > valmejor[2]):
+                    valmejor = agre_actual1
+                    mejor = primero
+            else:
+                mejores.append(segundo)
+                if(agre_actual2[2] > valmejor[2]):
+                    valmejor = agre_actual2
+                    mejor = segundo
+                    
+        pobla = np.asarray(mejores)
+        
+        sinmuta = pobla[CANT_CRUCES+1:]
+        sinmuta = np.asarray(sinmuta)
+        poblacion_cruzada = []
+        for i in range(ceil(CANT_CRUCES/2)):
+                uno,dos = BLX(pobla[i], pobla[i+1])    
+                poblacion_cruzada.append(uno)
+                poblacion_cruzada.append(dos)
+        pobla = np.concatenate((poblacion_cruzada,sinmuta))        
+        
+        
+        for i in range(CANTMUTACIONES):
+            indiceCromo = randint(0,TAM_POBLACION-1)
+            genAMutar = randint(0,train[0].size-1)
+            Z =  np.random.normal(0.0, 0.3)
+            pobla[indiceCromo][genAMutar] += Z
+            if pobla[indiceCromo][genAMutar]  > 1:
+                pobla[indiceCromo][genAMutar] = 1
+            elif pobla[indiceCromo][genAMutar]  < 0:
+                pobla[indiceCromo][genAMutar] = 0
+               
+            
+        if(generacion%GENE==0):
+            if(PLS == "todo"):
+                for i in range(TAM_POBLACION):
+                    cantEjecuciones+=1
+                    pobla[i]=BLMEME(train, y_train, pobla[i],2*pobla[i].size)
+                    evalu[i] = evaluate(pobla[i],train,y_train)
+            elif PLS == "diez":
+                for i in range(int(TAM_POBLACION*0.1)):
+                    cantEjecuciones+=1
+                    indiceCromo = randint(0,TAM_POBLACION-1)
+                    pobla[i]=BLMEME(train, y_train, pobla[indiceCromo],2*pobla[i].size)
+                    evalu[i] = evaluate(pobla[i],train,y_train)
+
+            elif PLS== "mejores":
+                for i in range(int(TAM_POBLACION*0.1)):    
+                    cantEjecuciones+=1
+                    indiceCromo = randint(0,TAM_POBLACION-1)
+                    pobla[i]=BLMEME(train, y_train, pobla[indiceCromo],2*pobla[i].size)
+                    evalu[i] = evaluate(pobla[i],train,y_train)
+
+        peor = [100,100,100]
+        indicePeor = 0
+        esta = False
+        for i in range(pobla.shape[0]):
+            cantEjecuciones+=1		
+            actual = evaluate(pobla[i],train, y_train)
+            evalu[i] = actual
+            if(np.equal(mejor, pobla[i])[0]):
+                esta = True
+                break
+
+            if peor[2] > actual[2]:
+                peor = actual
+                indicePeor = i
+        if esta == False:
+            pobla[indicePeor] = mejor 
+            evalu[indicePeor] = evaluate(mejor,train, y_train)
+        
+    mejor = [0,0,0]
+    indiceMejor = 0
+    for i in range(pobla.shape[0]):
+        actual =evaluate(pobla[i],train, y_train)
+        if actual[2] > mejor[2]:
+            mejor = actual
+            indiceMejor = i
+    return pobla[indiceMejor]
+
+def ejecutarmeme1(_data, _target):
+	_inicio = current_milli_time()
+	_time_actual = _inicio
+	#Realizo las 5 particiones con mezcla y semilla
+	skf = StratifiedKFold(n_splits=5, shuffle = True,  random_state = SEMILLA)
+	skf.get_n_splits(_data, _target)
+	#recorro cada una de las
+	sumatoriaClas = 0
+	sumatoriaRed = 0
+	sumatoriaAgregada = 0
+	_cont = 1
+	tabla = BeautifulTable()
+	tabla.column_headers = ["Particion","%cls","%redu","%agr", "tiempo"]
+	for _train_index, _test_index in skf.split(_data, _target):
+		#obtengo las particiones de test y train
+		X_train, _X_test = _data[_train_index], _data[_test_index]
+		y_train, _y_test = _target[_train_index], _target[_test_index]
+		#obtengo los pèsos para esta particion
+		_W  = AM(X_train, y_train, 10, "todo", 30 )
+
+		#obtengo las tasas  de evaular la solución
+		tasa_clas, tasa_red, tasa_agr = evaluate(_W,_X_test,_y_test)
+		time_anterior= _time_actual
+		_time_actual =current_milli_time()
+		sumatoriaClas += tasa_clas
+		sumatoriaRed += tasa_red
+		sumatoriaAgregada += tasa_agr
+		print(str(tasa_clas)+ " "+str(tasa_red)+str(tasa_agr))
+		tabla.append_row([_cont, tasa_clas, tasa_red,tasa_agr,( (_time_actual - time_anterior) / 1000.0)])
+		_cont += 1
+
+	_final = current_milli_time()
+	#calculo el tiempo de ejecucion
+	diferencia =(_final- _inicio) / 1000.0
+	#muestro los estadisticos
+	tabla.append_row(["Media",sumatoriaClas/5,sumatoriaRed/5,sumatoriaAgregada/5,(diferencia/5)])
+	print(tabla)
+    
+def ejecutarmeme2(_data, _target):
+	_inicio = current_milli_time()
+	_time_actual = _inicio
+	#Realizo las 5 particiones con mezcla y semilla
+	skf = StratifiedKFold(n_splits=5, shuffle = True,  random_state = SEMILLA)
+	skf.get_n_splits(_data, _target)
+	#recorro cada una de las
+	sumatoriaClas = 0
+	sumatoriaRed = 0
+	sumatoriaAgregada = 0
+	_cont = 1
+	tabla = BeautifulTable()
+	tabla.column_headers = ["Particion","%cls","%redu","%agr", "tiempo"]
+	for _train_index, _test_index in skf.split(_data, _target):
+		#obtengo las particiones de test y train
+		X_train, _X_test = _data[_train_index], _data[_test_index]
+		y_train, _y_test = _target[_train_index], _target[_test_index]
+		#obtengo los pèsos para esta particion
+		_W  = AM(X_train, y_train, 10, "diez", 30 )
+
+		#obtengo las tasas  de evaular la solución
+		tasa_clas, tasa_red, tasa_agr = evaluate(_W,_X_test,_y_test)
+		time_anterior= _time_actual
+		_time_actual =current_milli_time()
+		sumatoriaClas += tasa_clas
+		sumatoriaRed += tasa_red
+		sumatoriaAgregada += tasa_agr
+		tabla.append_row([_cont, tasa_clas, tasa_red,tasa_agr,( (_time_actual - time_anterior) / 1000.0)])
+		_cont += 1
+
+	_final = current_milli_time()
+	#calculo el tiempo de ejecucion
+	diferencia =(_final- _inicio) / 1000.0
+	#muestro los estadisticos
+	tabla.append_row(["Media",sumatoriaClas/5,sumatoriaRed/5,sumatoriaAgregada/5,(diferencia/5)])
+	print(tabla)
+    
+    
+def ejecutarmeme3(_data, _target):
+	_inicio = current_milli_time()
+	_time_actual = _inicio
+	#Realizo las 5 particiones con mezcla y semilla
+	skf = StratifiedKFold(n_splits=5, shuffle = True,  random_state = SEMILLA)
+	skf.get_n_splits(_data, _target)
+	#recorro cada una de las
+	sumatoriaClas = 0
+	sumatoriaRed = 0
+	sumatoriaAgregada = 0
+	_cont = 1
+	tabla = BeautifulTable()
+	tabla.column_headers = ["Particion","%cls","%redu","%agr", "tiempo"]
+	for _train_index, _test_index in skf.split(_data, _target):
+		#obtengo las particiones de test y train
+		X_train, _X_test = _data[_train_index], _data[_test_index]
+		y_train, _y_test = _target[_train_index], _target[_test_index]
+		#obtengo los pèsos para esta particion
+		_W  = AM(X_train, y_train, 10, "mejores", 30 )
+
+		#obtengo las tasas  de evaular la solución
+		tasa_clas, tasa_red, tasa_agr = evaluate(_W,_X_test,_y_test)
+		time_anterior= _time_actual
+		_time_actual =current_milli_time()
+		sumatoriaClas += tasa_clas
+		sumatoriaRed += tasa_red
+		sumatoriaAgregada += tasa_agr
+		tabla.append_row([_cont, tasa_clas, tasa_red,tasa_agr,( (_time_actual - time_anterior) / 1000.0)])
+		_cont += 1
+
+	_final = current_milli_time()
+	#calculo el tiempo de ejecucion
+	diferencia =(_final- _inicio) / 1000.0
+	#muestro los estadisticos
+	tabla.append_row(["Media",sumatoriaClas/5,sumatoriaRed/5,sumatoriaAgregada/5,(diferencia/5)])
+	print(tabla)
 TEXTURE = "ConjuntosDatos/texture.arff"
 COLPOSCOPY = "ConjuntosDatos/colposcopy.arff"
 IONOSPHERE = "ConjuntosDatos/ionosphere.arff"
@@ -698,8 +1127,32 @@ dataC, targetC = cargarDatos(COLPOSCOPY,'int')
 dataT, targetT = cargarDatos(TEXTURE,'int')
 dataI, targetI = cargarDatos(IONOSPHERE,'str')
 
+
+
+print("--------------------Ejecucion  AM-(10,1.0)--------------------")
+print("--------------------COLPOSCOPY--------------------")
+ejecutarmeme1(dataC, targetC)
+print("--------------------TEXTURE--------------------")
+ejecutarmeme1(dataT, targetT)
+print("--------------------IONOSPHERE--------------------")
+ejecutarmeme1(dataI, targetI)
+print("--------------------Ejecucion  AM-(10,0.1)--------------------")
+print("--------------------COLPOSCOPY--------------------")
+ejecutarmeme2(dataC, targetC)
+print("--------------------TEXTURE--------------------")
+ejecutarmeme2(dataT, targetT)
+print("--------------------IONOSPHERE--------------------")
+ejecutarmeme2(dataI, targetI)
+print("--------------------Ejecucion  AM-(10,0.1mej)--------------------")
+print("--------------------COLPOSCOPY--------------------")
+ejecutarmeme3(dataC, targetC)
+print("--------------------TEXTURE--------------------")
+ejecutarmeme3(dataT, targetT)
+print("--------------------IONOSPHERE--------------------")
+ejecutarmeme3(dataI, targetI)
+
+
 #relief
-'''
 print("--------------------Ejecucion Knn--------------------")
 print("------------------COLPOSCOPY----------------------")
 ejecutarKNN(dataC, targetC)
@@ -725,15 +1178,6 @@ print("--------------------TEXTURE--------------------")
 ejecutarBL(dataT, targetT)
 print("--------------------IONOSPHERE--------------------")
 ejecutarBL(dataI, targetI)
-'''
-
-print("--------------------Ejecucion AGE-BLX--------------------")
-print("--------------------COLPOSCOPY--------------------")
-ejecutarAGEBLX(dataC, targetC)
-print("--------------------TEXTURE--------------------")
-ejecutarAGEBLX(dataT, targetT)
-print("--------------------IONOSPHERE--------------------")
-ejecutarAGEBLX(dataI, targetI)
 
 print("--------------------Ejecucion AGG-CA--------------------")
 print("--------------------COLPOSCOPY--------------------")
@@ -750,4 +1194,26 @@ print("--------------------TEXTURE--------------------")
 ejecutarAGGBLX(dataT, targetT)
 print("--------------------IONOSPHERE--------------------")
 ejecutarAGGBLX(dataI, targetI)
+
+
+print("--------------------Ejecucion AGE-CA--------------------")
+print("--------------------COLPOSCOPY--------------------")
+ejecutarAGEAC(dataC, targetC)
+print("--------------------TEXTURE--------------------")
+ejecutarAGEAC(dataT, targetT)
+print("--------------------IONOSPHERE--------------------")
+ejecutarAGEAC(dataI, targetI)
+
+print("--------------------Ejecucion AGE-BLX--------------------")
+print("--------------------COLPOSCOPY--------------------")
+ejecutarAGEBLX(dataC, targetC)
+print("--------------------TEXTURE--------------------")
+ejecutarAGEBLX(dataT, targetT)
+print("--------------------IONOSPHERE--------------------")
+ejecutarAGEBLX(dataI, targetI)
+
+
+
+
+
 

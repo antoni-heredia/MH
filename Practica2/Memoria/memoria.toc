@@ -1,0 +1,33 @@
+\babel@toc {spanish}{}
+\contentsline {section}{\numberline {1}Practica 1.b}{3}{section.1}
+\contentsline {subsection}{\numberline {1.1}Descripci\IeC {\'o}n del problema}{3}{subsection.1.1}
+\contentsline {subsection}{\numberline {1.2}Descripci\IeC {\'o}n de los algoritmos comunes}{3}{subsection.1.2}
+\contentsline {subsection}{\numberline {1.3}Representaci\IeC {\'o}n de los datos}{4}{subsection.1.3}
+\contentsline {subsection}{\numberline {1.4}Ejecuci\IeC {\'o}n de m\IeC {\'e}todos de b\IeC {\'u}squeda}{5}{subsection.1.4}
+\contentsline {subsection}{\numberline {1.5}Evaluador de soluciones}{5}{subsection.1.5}
+\contentsline {subsection}{\numberline {1.6}Descripci\IeC {\'o}n de los m\IeC {\'e}todos de b\IeC {\'u}squeda}{6}{subsection.1.6}
+\contentsline {subsection}{\numberline {1.7}Clasificador 1-NN}{6}{subsection.1.7}
+\contentsline {subsection}{\numberline {1.8}Relief}{7}{subsection.1.8}
+\contentsline {subsection}{\numberline {1.9}B\IeC {\'u}squeda local}{8}{subsection.1.9}
+\contentsline {subsubsection}{\numberline {1.9.1}Resumen}{10}{subsubsection.1.9.1}
+\contentsline {section}{\numberline {2}Practica 2.b}{10}{section.2}
+\contentsline {subsection}{\numberline {2.1}Esquema de representaci\IeC {\'o}n de soluciones empleado}{10}{subsection.2.1}
+\contentsline {subsection}{\numberline {2.2}Funci\IeC {\'o}n objetivo}{11}{subsection.2.2}
+\contentsline {subsection}{\numberline {2.3}Algoritmo de selecci\IeC {\'o}n en AGs y operadores de cruce y mutaci\IeC {\'o}n}{11}{subsection.2.3}
+\contentsline {subsubsection}{\numberline {2.3.1}Operador de cruce BLX}{12}{subsubsection.2.3.1}
+\contentsline {subsubsection}{\numberline {2.3.2}Operador de cruce aritmetico}{12}{subsubsection.2.3.2}
+\contentsline {subsubsection}{\numberline {2.3.3}Operador de mutaci\IeC {\'o}n}{13}{subsubsection.2.3.3}
+\contentsline {subsubsection}{\numberline {2.3.4}Elitismo}{13}{subsubsection.2.3.4}
+\contentsline {subsubsection}{\numberline {2.3.5}Algoritmo gen\IeC {\'e}ticos generacionales}{14}{subsubsection.2.3.5}
+\contentsline {subsection}{\numberline {2.4}Experimentos}{15}{subsection.2.4}
+\contentsline {subsubsection}{\numberline {2.4.1}Clasificador 1-knn}{15}{subsubsection.2.4.1}
+\contentsline {subsubsection}{\numberline {2.4.2}Relief}{15}{subsubsection.2.4.2}
+\contentsline {subsubsection}{\numberline {2.4.3}B\IeC {\'u}squeda local}{15}{subsubsection.2.4.3}
+\contentsline {subsubsection}{\numberline {2.4.4}AGG-BLX}{16}{subsubsection.2.4.4}
+\contentsline {subsubsection}{\numberline {2.4.5}AGG-AC}{16}{subsubsection.2.4.5}
+\contentsline {subsubsection}{\numberline {2.4.6}AGE-BLX}{16}{subsubsection.2.4.6}
+\contentsline {subsubsection}{\numberline {2.4.7}AGE-AC}{16}{subsubsection.2.4.7}
+\contentsline {subsubsection}{\numberline {2.4.8}AM-(10,1.0)}{16}{subsubsection.2.4.8}
+\contentsline {subsubsection}{\numberline {2.4.9}AM-(10,0.1)}{17}{subsubsection.2.4.9}
+\contentsline {subsubsection}{\numberline {2.4.10}AM-(10,0.1Mejores)}{17}{subsubsection.2.4.10}
+\contentsline {subsubsection}{\numberline {2.4.11}Resultados globales}{17}{subsubsection.2.4.11}

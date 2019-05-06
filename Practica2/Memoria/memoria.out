@@ -1,0 +1,32 @@
+\BOOKMARK [1][-]{section.1}{Practica 1.b}{}% 1
+\BOOKMARK [2][-]{subsection.1.1}{Descripci\363n del problema}{section.1}% 2
+\BOOKMARK [2][-]{subsection.1.2}{Descripci\363n de los algoritmos comunes}{section.1}% 3
+\BOOKMARK [2][-]{subsection.1.3}{Representaci\363n de los datos}{section.1}% 4
+\BOOKMARK [2][-]{subsection.1.4}{Ejecuci\363n de m\351todos de b\372squeda}{section.1}% 5
+\BOOKMARK [2][-]{subsection.1.5}{Evaluador de soluciones}{section.1}% 6
+\BOOKMARK [2][-]{subsection.1.6}{Descripci\363n de los m\351todos de b\372squeda}{section.1}% 7
+\BOOKMARK [2][-]{subsection.1.7}{Clasificador 1-NN}{section.1}% 8
+\BOOKMARK [2][-]{subsection.1.8}{Relief}{section.1}% 9
+\BOOKMARK [2][-]{subsection.1.9}{B\372squeda local}{section.1}% 10
+\BOOKMARK [3][-]{subsubsection.1.9.1}{Resumen}{subsection.1.9}% 11
+\BOOKMARK [1][-]{section.2}{Practica 2.b}{}% 12
+\BOOKMARK [2][-]{subsection.2.1}{Esquema de representaci\363n de soluciones empleado}{section.2}% 13
+\BOOKMARK [2][-]{subsection.2.2}{Funci\363n objetivo}{section.2}% 14
+\BOOKMARK [2][-]{subsection.2.3}{Algoritmo de selecci\363n en AGs y operadores de cruce y mutaci\363n}{section.2}% 15
+\BOOKMARK [3][-]{subsubsection.2.3.1}{Operador de cruce BLX}{subsection.2.3}% 16
+\BOOKMARK [3][-]{subsubsection.2.3.2}{Operador de cruce aritmetico}{subsection.2.3}% 17
+\BOOKMARK [3][-]{subsubsection.2.3.3}{Operador de mutaci\363n}{subsection.2.3}% 18
+\BOOKMARK [3][-]{subsubsection.2.3.4}{Elitismo}{subsection.2.3}% 19
+\BOOKMARK [3][-]{subsubsection.2.3.5}{Algoritmo gen\351ticos generacionales}{subsection.2.3}% 20
+\BOOKMARK [2][-]{subsection.2.4}{Experimentos}{section.2}% 21
+\BOOKMARK [3][-]{subsubsection.2.4.1}{Clasificador 1-knn}{subsection.2.4}% 22
+\BOOKMARK [3][-]{subsubsection.2.4.2}{Relief}{subsection.2.4}% 23
+\BOOKMARK [3][-]{subsubsection.2.4.3}{B\372squeda local}{subsection.2.4}% 24
+\BOOKMARK [3][-]{subsubsection.2.4.4}{AGG-BLX}{subsection.2.4}% 25
+\BOOKMARK [3][-]{subsubsection.2.4.5}{AGG-AC}{subsection.2.4}% 26
+\BOOKMARK [3][-]{subsubsection.2.4.6}{AGE-BLX}{subsection.2.4}% 27
+\BOOKMARK [3][-]{subsubsection.2.4.7}{AGE-AC}{subsection.2.4}% 28
+\BOOKMARK [3][-]{subsubsection.2.4.8}{AM-\(10,1.0\)}{subsection.2.4}% 29
+\BOOKMARK [3][-]{subsubsection.2.4.9}{AM-\(10,0.1\)}{subsection.2.4}% 30
+\BOOKMARK [3][-]{subsubsection.2.4.10}{AM-\(10,0.1Mejores\)}{subsection.2.4}% 31
+\BOOKMARK [3][-]{subsubsection.2.4.11}{Resultados globales}{subsection.2.4}% 32
